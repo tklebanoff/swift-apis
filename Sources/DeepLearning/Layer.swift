@@ -296,9 +296,9 @@ public extension Dense {
         activation: @escaping Activation = identity,
         generator: inout G
     ) {
-        self.init(weight: Tensor(glorotUniform: [Int32(inputSize), Int32(outputSize)],
+        self.init(weight: Tensor(glorotUniform: [inputSize, outputSize],
                                  generator: &generator),
-                  bias: Tensor(zeros: [Int32(outputSize)]),
+                  bias: Tensor(zeros: [outputSize]),
                   activation: activation)
     }
 
@@ -326,9 +326,9 @@ public extension Dense {
         seed: (Int64, Int64) = (Int64.random(in: Int64.min..<Int64.max),
                                 Int64.random(in: Int64.min..<Int64.max))
     ) {
-        self.init(weight: Tensor(glorotUniform: [Int32(inputSize), Int32(outputSize)],
+        self.init(weight: Tensor(glorotUniform: [inputSize, outputSize],
                                  seed: seed),
-                  bias: Tensor(zeros: [Int32(outputSize)]),
+                  bias: Tensor(zeros: [outputSize]),
                   activation: activation)
     }
 }
@@ -413,10 +413,10 @@ public extension Conv1D where Scalar.RawSignificand: FixedWidthInteger {
         generator: inout G
     ) {
         let filterTensorShape = TensorShape([
-            Int32(filterShape.0), Int32(filterShape.1), Int32(filterShape.2)])
+            filterShape.0, filterShape.1, filterShape.2])
         self.init(
             filter: Tensor(glorotUniform: filterTensorShape),
-            bias: Tensor(zeros: TensorShape([Int32(filterShape.2)])),
+            bias: Tensor(zeros: TensorShape([filterShape.2])),
             activation: activation,
             stride: stride,
             padding: padding)
@@ -444,10 +444,10 @@ public extension Conv1D {
                                 Int64.random(in: Int64.min..<Int64.max))
     ) {
         let filterTensorShape = TensorShape([
-            Int32(filterShape.0), Int32(filterShape.1), Int32(filterShape.2)])
+            filterShape.0, filterShape.1, filterShape.2])
         self.init(
             filter: Tensor(glorotUniform: filterTensorShape, seed: seed),
-            bias: Tensor(zeros: TensorShape([Int32(filterShape.2)])),
+            bias: Tensor(zeros: TensorShape([filterShape.2])),
             activation: activation,
             stride: Int32(stride),
             padding: padding)
@@ -533,11 +533,10 @@ public extension Conv2D {
         generator: inout G
     ) {
         let filterTensorShape = TensorShape([
-            Int32(filterShape.0), Int32(filterShape.1),
-            Int32(filterShape.2), Int32(filterShape.3)])
+            filterShape.0, filterShape.1, filterShape.2, filterShape.3])
         self.init(
             filter: Tensor(glorotUniform: filterTensorShape, generator: &generator),
-            bias: Tensor(zeros: TensorShape([Int32(filterShape.3)])),
+            bias: Tensor(zeros: TensorShape([filterShape.3])),
             activation: activation,
             strides: strides,
             padding: padding)
@@ -564,11 +563,10 @@ public extension Conv2D {
                                 Int64.random(in: Int64.min..<Int64.max))
     ) {
         let filterTensorShape = TensorShape([
-            Int32(filterShape.0), Int32(filterShape.1),
-            Int32(filterShape.2), Int32(filterShape.3)])
+            filterShape.0, filterShape.1, filterShape.2, filterShape.3])
         self.init(
             filter: Tensor(glorotUniform: filterTensorShape, seed: seed),
-            bias: Tensor(zeros: TensorShape([Int32(filterShape.3)])),
+            bias: Tensor(zeros: TensorShape([filterShape.3])),
             activation: activation,
             strides: (Int32(strides.0), Int32(strides.1)),
             padding: padding)
@@ -593,7 +591,7 @@ public struct TransposedConv2D: Layer {
     @noDerivative public let strides: (Int32, Int32)
     /// The padding algorithm for convolution.
     @noDerivative public let padding: Padding
-    @noDerivative public let paddingIndex: Int32
+    @noDerivative public let paddingIndex: Int
 
     /// Creates a `TransposedConv2D` layer with the specified filter, bias,
     /// activation function, strides, and padding.
@@ -629,13 +627,15 @@ public struct TransposedConv2D: Layer {
     @differentiable
     public func applied(to input: Tensor<Float>, in _: Context) -> Tensor<Float> {
         let batchSize = input.shape[0]
-        let w = (input.shape[1] - (1 * paddingIndex)) * strides.0 + (filter.shape[0] * paddingIndex)
-        let h = (input.shape[2] - (1 * paddingIndex)) * strides.1 + (filter.shape[1] * paddingIndex)
+        let w = (input.shape[1] - (1 * paddingIndex)) *
+          Int(strides.0) + (filter.shape[0] * paddingIndex)
+        let h = (input.shape[2] - (1 * paddingIndex)) *
+          Int(strides.1) + (filter.shape[1] * paddingIndex)
         let c = filter.shape[2]
         let newShape = Tensor<Int32>([batchSize, w, h, c])
         return activation(input.conv2DBackpropInput(shape: newShape, filter: filter,
-                                                         strides: (1, strides.0, strides.1, 1),
-                                                         padding: padding) + bias)
+                                                    strides: (1, strides.0, strides.1, 1),
+                                                    padding: padding) + bias)
     }
 }
 
@@ -661,11 +661,10 @@ public extension TransposedConv2D {
         generator: inout G
     ) {
         let filterTensorShape = TensorShape([
-            Int32(filterShape.0), Int32(filterShape.1),
-            Int32(filterShape.2), Int32(filterShape.3)])
+            filterShape.0, filterShape.1, filterShape.2, filterShape.3])
         self.init(
             filter: Tensor(glorotUniform: filterTensorShape, generator: &generator),
-            bias: Tensor(zeros: TensorShape([Int32(filterShape.3)])),
+            bias: Tensor(zeros: TensorShape([filterShape.3])),
             activation: activation,
             strides: strides,
             padding: padding)
@@ -692,11 +691,10 @@ public extension TransposedConv2D {
                                 Int64.random(in: Int64.min..<Int64.max))
     ) {
         let filterTensorShape = TensorShape([
-            Int32(filterShape.0), Int32(filterShape.1),
-            Int32(filterShape.2), Int32(filterShape.3)])
+            filterShape.0, filterShape.1, filterShape.2, filterShape.3])
         self.init(
             filter: Tensor(glorotUniform: filterTensorShape, seed: seed),
-            bias: Tensor(zeros: TensorShape([Int32(filterShape.3)])),
+            bias: Tensor(zeros: TensorShape([filterShape.3])),
             activation: activation,
             strides: strides,
             padding: padding)
@@ -822,8 +820,8 @@ public struct BatchNorm<Scalar: TensorFlowFloatingPoint>: Layer {
                 epsilon: Tensor<Scalar> = Tensor(0.001)) {
         self.axis = Int32(axis)
         self.momentum = momentum
-        self.scale = Tensor<Scalar>(ones: [Int32(featureCount)])
-        self.offset = Tensor<Scalar>(zeros: [Int32(featureCount)])
+        self.scale = Tensor<Scalar>(ones: [featureCount])
+        self.offset = Tensor<Scalar>(zeros: [featureCount])
         self.epsilon = epsilon
         self.runningMean = Parameter(Tensor(0))
         self.runningVariance = Parameter(Tensor(1))
@@ -1106,8 +1104,8 @@ public struct LayerNorm<Scalar: TensorFlowFloatingPoint>: Layer {
                 axis: Int,
                 epsilon: Tensor<Scalar> = Tensor(0.001)) {
         self.init(
-            offset: Tensor(zeros: [Int32(featureCount)]),
-            scale: Tensor(ones: [Int32(featureCount)]),
+            offset: Tensor(zeros: [featureCount]),
+            scale: Tensor(ones: [featureCount]),
             axis: axis,
             epsilon: epsilon
         )
@@ -1202,12 +1200,12 @@ public struct Dropout<Scalar: TensorFlowFloatingPoint>: Layer {
 /// An upsampling layer for 1-D inputs.
 @_fixed_layout
 public struct UpSampling1D<Scalar: TensorFlowFloatingPoint>: Layer {
-    @noDerivative public let size: Int32
+    @noDerivative public let size: Int
 
     /// Creates an upsampling layer.
     ///
     /// - Parameter size: The upsampling factor for timesteps.
-    public init(size: Int32) {
+    public init(size: Int) {
        self.size = size
     }
 
@@ -1231,12 +1229,12 @@ public struct UpSampling1D<Scalar: TensorFlowFloatingPoint>: Layer {
 /// An upsampling layer for 2-D inputs.
 @_fixed_layout
 public struct UpSampling2D<Scalar: TensorFlowFloatingPoint>: Layer {
-    @noDerivative public let size: Int32
+    @noDerivative public let size: Int
 
     /// Creates an upsampling layer.
     ///
     /// - Parameter size: The upsampling factor for rows and columns.
-    public init(size: Int32) {
+    public init(size: Int) {
        self.size = size
     }
 
@@ -1275,7 +1273,7 @@ public struct Flatten<Scalar: TensorFlowFloatingPoint>: Layer {
     @differentiable
     public func applied(to input: Tensor<Scalar>, in _: Context) -> Tensor<Scalar> {
         let batchSize = input.shape[0]
-        let remaining = input.shape[1..<input.rank].contiguousSize
+        let remaining = input.shape[1..<Int(input.rank)].contiguousSize
         return input.reshaped(to: [batchSize, remaining])
     }
 }
